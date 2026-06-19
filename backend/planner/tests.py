@@ -17,6 +17,12 @@ class TripPlanTestCase(TestCase):
         self.assertEqual(chicago["lat"], 41.8781)
         self.assertEqual(chicago["lng"], -87.6298)
 
+    def test_geocoding_with_coordinates_and_name(self):
+        result = geocode_location("-6.2146, 106.8451 || Special Capital Region of Jakarta, Java, Indonesia")
+        self.assertEqual(result["lat"], -6.2146)
+        self.assertEqual(result["lng"], 106.8451)
+        self.assertEqual(result["name"], "Special Capital Region of Jakarta, Java, Indonesia")
+
     def test_hos_calculator_compliant(self):
                                                                                     
         activities, stops, warnings, compliance, cycle_used = calculate_hos_timeline(

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Truck, Shield, Route, MapPin } from 'lucide-react';
+import { Truck, Shield, Route } from 'lucide-react';
 
 import TripForm from './components/TripForm';
 import RouteMap from './components/RouteMap';
@@ -11,20 +11,8 @@ import HOSSummary from './components/HOSSummary';
 import DailyLogSheet from './components/DailyLogSheet';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
-import heroImage from './assets/hero.png';
-import img1 from './assets/1.png';
-import img2 from './assets/2.png';
-import img3 from './assets/3.png';
-import img4 from './assets/4.png';
-import img5 from './assets/5.png';
-
-const showcaseTabs = [
-  { label: 'Planning Form', img: img1, desc: 'Input your origin, pickup, and dropoff locations alongside current HOS cycle usage.' },
-  { label: 'Interactive Map', img: img2, desc: 'Visualize your route polyline and custom stops (Pickup, Fuel, Rest, Delivery) dynamically.' },
-  { label: 'HOS Compliance', img: img3, desc: 'Check automated HOS violations, warnings, and safety recommendations.' },
-  { label: 'Stops & Instructions', img: img4, desc: 'View a timeline of stops and detailed step-by-step navigation instructions.' },
-  { label: 'Daily Log Sheet', img: img5, desc: 'View standard 24-hour Driver Daily Logs with a visual activity grid.' },
-];
+import backgroundImage from './assets/background.png';
+import logoImage from './assets/logo.png';
 
 const API_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8000/api`;
 
@@ -155,7 +143,17 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [usingMock, setUsingMock] = useState(false);
-  const [selectedTab, setSelectedTab] = useState(0);
+
+  const resultsRef = useRef(null);
+
+  useEffect(() => {
+    if (tripData && !isLoading) {
+      const timer = setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [tripData, isLoading]);
 
   const handleFormSubmit = async (formData) => {
     setIsLoading(true);
@@ -167,7 +165,7 @@ export default function App() {
       setTripData(response.data);
     } catch (err) {
       console.error('API Error, falling back to local simulation:', err);
-      
+
       setError('Failed to connect to the backend API. Using local simulation (offline fallback) to display results.');
       setTripData(OFFLINE_SAMPLE_DATA);
       setUsingMock(true);
@@ -177,7 +175,6 @@ export default function App() {
   };
 
   const handleLoadSample = () => {
-    
     setTripData(OFFLINE_SAMPLE_DATA);
     setError(null);
     setUsingMock(true);
@@ -185,17 +182,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-16">
-      
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-600/10">
-              <Truck className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-lg font-black tracking-tight text-slate-900 uppercase">ELD Trip Planner</h1>
-              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">HOS Compliance Platform</p>
-            </div>
+            <img src={logoImage} alt="ELD Trip Planner Logo" className="h-10 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
@@ -210,125 +200,104 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+      {/* Hero Section with Background Image */}
+      <div 
+        className="relative bg-slate-900 py-16 sm:py-24 bg-cover bg-center overflow-hidden border-b border-slate-200"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      >
+        {/* Semi-transparent dark overlay with subtle backdrop blur */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/80 to-slate-950/90 backdrop-blur-[2px]" />
         
-        <div className="text-center md:text-left">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Plan compliant routes and generate Driver’s Daily Logs.
-          </h2>
-          <p className="text-sm text-slate-500 mt-1.5 max-w-2xl">
-            Commercial truck routing helper with automatic hours of service (HOS) calculation and standardized log generation.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-1">
-            <TripForm
-              onSubmit={handleFormSubmit}
-              onLoadSample={handleLoadSample}
-              isLoading={isLoading}
-            />
-          </div>
-          
-          <div className="lg:col-span-2 space-y-8">
-            {error && (
-              <ErrorState
-                message={error}
-                onClose={() => setError(null)}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-7 space-y-6 text-white text-center lg:text-left">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/25">
+                <Shield className="w-3.5 h-3.5" /> FMCSA HOS & Route Compliance
+              </span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                Plan Compliant Truck Routes & Generate Daily Logs
+              </h2>
+              <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
+                Analyze hours of service compliance, optimize fuel and rest stops, and generate standardized daily log sheets automatically. Enter your route details to get started.
+              </p>
+            </div>
+            <div className="lg:col-span-5 w-full">
+              <TripForm
+                onSubmit={handleFormSubmit}
+                onLoadSample={handleLoadSample}
+                isLoading={isLoading}
               />
-            )}
-            
-            {isLoading ? (
-              <LoadingState />
-            ) : tripData ? (
-              <div className="lg:sticky lg:top-20">
-                <TripSummary summary={tripData.summary} />
-              </div>
-            ) : (
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-800">Features Preview</h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Click through the tabs below to explore key features of the application.</p>
-                  </div>
-                  <button
-                    onClick={handleLoadSample}
-                    className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition self-start sm:self-center cursor-pointer"
-                  >
-                    Quick Load Sample
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {showcaseTabs.map((tab, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedTab(idx)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition cursor-pointer ${
-                        selectedTab === idx
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/10'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-xs font-medium text-slate-500 bg-slate-50 border border-slate-100 p-2.5 rounded-xl leading-relaxed">
-                    💡 <span className="font-bold text-slate-700">{showcaseTabs[selectedTab].label}:</span> {showcaseTabs[selectedTab].desc}
-                  </p>
-                  <div className="border border-slate-100 rounded-xl overflow-hidden shadow-inner bg-slate-50">
-                    <img
-                      src={showcaseTabs[selectedTab].img}
-                      alt={showcaseTabs[selectedTab].label}
-                      className="w-full h-auto object-cover max-h-[380px]"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
+      </div>
 
-        {tripData && !isLoading && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-300">
-            
-            <RouteMap
-              locations={tripData.locations}
-              routeGeometry={tripData.route_geometry}
-              stops={tripData.stops}
-            />
+      {/* Error State */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+          <ErrorState
+            message={error}
+            onClose={() => setError(null)}
+          />
+        </div>
+      )}
 
-            <HOSSummary
-              warnings={tripData.warnings}
-              summary={tripData.summary}
-            />
+      {/* Loading State */}
+      {isLoading && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+          <LoadingState />
+        </div>
+      )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <StopsTimeline stops={tripData.stops} />
-              <RouteInstructions instructions={tripData.instructions} />
+      {/* Results Section */}
+      {tripData && !isLoading && (
+        <main ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+            <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+              <Route className="w-5 h-5" />
             </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-                <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
-                  <Truck className="w-4 h-4" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-800">Driver's Daily Log Sheets</h2>
-              </div>
-              <div className="space-y-8">
-                {tripData.daily_logs.map((log) => (
-                  <DailyLogSheet key={log.day} log={log} />
-                ))}
-              </div>
-            </div>
-
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Trip Analysis & Compliance Report</h2>
           </div>
-        )}
 
-      </main>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-5 space-y-8">
+              <TripSummary summary={tripData.summary} />
+              <HOSSummary
+                warnings={tripData.warnings}
+                summary={tripData.summary}
+              />
+            </div>
+
+            <div className="lg:col-span-7">
+              <RouteMap
+                locations={tripData.locations}
+                routeGeometry={tripData.route_geometry}
+                stops={tripData.stops}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <StopsTimeline stops={tripData.stops} />
+            <RouteInstructions instructions={tripData.instructions} />
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+              <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+                <Truck className="w-4 h-4" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800">Driver's Daily Log Sheets</h2>
+            </div>
+            <div className="space-y-8">
+              {tripData.daily_logs.map((log) => (
+                <DailyLogSheet key={log.day} log={log} />
+              ))}
+            </div>
+          </div>
+        </main>
+      )}
     </div>
   );
 }

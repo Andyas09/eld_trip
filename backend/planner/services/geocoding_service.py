@@ -16,6 +16,20 @@ FALLBACK_COORDINATES = {
 def geocode_location(location_name: str) -> dict:
            
     clean_name = location_name.strip()
+
+    if "||" in clean_name:
+        try:
+            coord_part, name_part = clean_name.split("||", 1)
+            parts = [float(x.strip()) for x in coord_part.split(",")]
+            if len(parts) == 2:
+                return {
+                    "lat": parts[0],
+                    "lng": parts[1],
+                    "name": name_part.strip()
+                }
+        except ValueError:
+            pass
+
     key = clean_name.lower()
 
     try:

@@ -8,6 +8,10 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
   const [currentCycleUsed, setCurrentCycleUsed] = useState(0);
   const [errors, setErrors] = useState({});
 
+  const [currentCoords, setCurrentCoords] = useState(null);
+  const [pickupCoords, setPickupCoords] = useState(null);
+  const [dropoffCoords, setDropoffCoords] = useState(null);
+
   const [suggestions, setSuggestions] = useState({ current: [], pickup: [], dropoff: [] });
   const [activeInput, setActiveInput] = useState(null);
   const [timers, setTimers] = useState({ current: null, pickup: null, dropoff: null });
@@ -43,15 +47,19 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
   const handleInputChange = (field, val, setter) => {
     setter(val);
     setActiveInput(field);
-    
+
+    if (field === 'current') setCurrentCoords(null);
+    if (field === 'pickup') setPickupCoords(null);
+    if (field === 'dropoff') setDropoffCoords(null);
+
     if (timers[field]) {
       clearTimeout(timers[field]);
     }
-    
+
     const newTimer = setTimeout(() => {
       fetchSuggestions(field, val);
     }, 400);
-    
+
     setTimers(prev => ({ ...prev, [field]: newTimer }));
   };
 
@@ -60,12 +68,12 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
     if (!currentLocation.trim()) newErrors.currentLocation = 'Current location is required';
     if (!pickupLocation.trim()) newErrors.pickupLocation = 'Pickup location is required';
     if (!dropoffLocation.trim()) newErrors.dropoffLocation = 'Dropoff location is required';
-    
+
     const cycle = Number(currentCycleUsed);
     if (isNaN(cycle) || cycle < 0 || cycle > 70) {
       newErrors.currentCycleUsed = 'Cycle must be a number between 0 and 70 hours';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -73,10 +81,23 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
+
+    const formattedCurrent = currentCoords && currentCoords.name === currentLocation
+      ? `${currentCoords.lat}, ${currentCoords.lon} || ${currentLocation}`
+      : currentLocation;
+
+    const formattedPickup = pickupCoords && pickupCoords.name === pickupLocation
+      ? `${pickupCoords.lat}, ${pickupCoords.lon} || ${pickupLocation}`
+      : pickupLocation;
+
+    const formattedDropoff = dropoffCoords && dropoffCoords.name === dropoffLocation
+      ? `${dropoffCoords.lat}, ${dropoffCoords.lon} || ${dropoffLocation}`
+      : dropoffLocation;
+
     onSubmit({
-      current_location: currentLocation,
-      pickup_location: pickupLocation,
-      dropoff_location: dropoffLocation,
+      current_location: formattedCurrent,
+      pickup_location: formattedPickup,
+      dropoff_location: formattedDropoff,
       current_cycle_used: Number(currentCycleUsed),
     });
   };
@@ -86,6 +107,9 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
     setPickupLocation('St. Louis, MO');
     setDropoffLocation('Dallas, TX');
     setCurrentCycleUsed(20);
+    setCurrentCoords(null);
+    setPickupCoords(null);
+    setDropoffCoords(null);
     setErrors({});
     onLoadSample();
   };
@@ -118,11 +142,10 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
               onChange={(e) => handleInputChange('current', e.target.value, setCurrentLocation)}
               onFocus={() => setActiveInput('current')}
               placeholder="e.g. Chicago, IL"
-              className={`w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${
-                errors.currentLocation ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
-              }`}
+              className={`w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${errors.currentLocation ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
+                }`}
             />
-            
+
             {activeInput === 'current' && suggestions.current.length > 0 && (
               <div className="absolute z-50 w-full bg-white border border-slate-200 mt-1.5 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100">
                 {suggestions.current.map((item, idx) => (
@@ -131,6 +154,7 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
                     type="button"
                     onClick={() => {
                       setCurrentLocation(item.display_name);
+                      setCurrentCoords({ lat: item.lat, lon: item.lon, name: item.display_name });
                       setSuggestions(prev => ({ ...prev, current: [] }));
                       setActiveInput(null);
                     }}
@@ -157,9 +181,8 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
               onChange={(e) => handleInputChange('pickup', e.target.value, setPickupLocation)}
               onFocus={() => setActiveInput('pickup')}
               placeholder="e.g. St. Louis, MO"
-              className={`w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${
-                errors.pickupLocation ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
-              }`}
+              className={`w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${errors.pickupLocation ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
+                }`}
             />
 
             {activeInput === 'pickup' && suggestions.pickup.length > 0 && (
@@ -170,6 +193,7 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
                     type="button"
                     onClick={() => {
                       setPickupLocation(item.display_name);
+                      setPickupCoords({ lat: item.lat, lon: item.lon, name: item.display_name });
                       setSuggestions(prev => ({ ...prev, pickup: [] }));
                       setActiveInput(null);
                     }}
@@ -196,9 +220,8 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
               onChange={(e) => handleInputChange('dropoff', e.target.value, setDropoffLocation)}
               onFocus={() => setActiveInput('dropoff')}
               placeholder="e.g. Dallas, TX"
-              className={`w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${
-                errors.dropoffLocation ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
-              }`}
+              className={`w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${errors.dropoffLocation ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
+                }`}
             />
 
             {activeInput === 'dropoff' && suggestions.dropoff.length > 0 && (
@@ -209,6 +232,7 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
                     type="button"
                     onClick={() => {
                       setDropoffLocation(item.display_name);
+                      setDropoffCoords({ lat: item.lat, lon: item.lon, name: item.display_name });
                       setSuggestions(prev => ({ ...prev, dropoff: [] }));
                       setActiveInput(null);
                     }}
@@ -235,9 +259,8 @@ export default function TripForm({ onSubmit, onLoadSample, isLoading }) {
               value={currentCycleUsed}
               onChange={(e) => setCurrentCycleUsed(e.target.value)}
               placeholder="Cycle used in hours"
-              className={`w-full px-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${
-                errors.currentCycleUsed ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
-              }`}
+              className={`w-full px-4 py-2 text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition ${errors.currentCycleUsed ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
+                }`}
             />
           </div>
           {errors.currentCycleUsed && <p className="text-xs text-rose-500 mt-1">{errors.currentCycleUsed}</p>}
