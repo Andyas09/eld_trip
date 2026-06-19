@@ -86,6 +86,10 @@
    ```
    *The frontend web app will be available at: `http://localhost:5173`*
 
+### 3. Loom Video / Demo
+
+Watch the demo video of the application:
+- [Loom Video / Demo Link](https://drive.google.com/drive/folders/17HsJs42J6p6UKRpySFMck1uh7tIlSUFe?usp=sharing)
 ---
 
 ## API Endpoint Documentation
